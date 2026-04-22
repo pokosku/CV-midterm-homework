@@ -4,6 +4,7 @@ include_directories(include)
 set(SOURCES 
     src/main.cpp
     src/DataLoader.cpp
+    src/feature_detection.cpp
 )
 
 find_package(OpenCV REQUIRED)

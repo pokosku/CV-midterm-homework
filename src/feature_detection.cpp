@@ -1,7 +1,4 @@
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/features2d.hpp>
+#include "feature_detection.hpp"
 
 
 cv::Mat detect_features(cv::Mat frame_1, cv::Mat frame_2){
@@ -11,5 +8,5 @@ cv::Mat detect_features(cv::Mat frame_1, cv::Mat frame_2){
 
     cv::threshold(moving_mask, moving_mask,20,255, cv::THRESH_BINARY);
     
-    
+    return moving_mask;
 }

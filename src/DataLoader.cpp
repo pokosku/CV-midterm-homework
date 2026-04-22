@@ -1,47 +1,46 @@
 #include "DataLoader.hpp"
 
-DataLoader::DataLoader(string directory){
+DataLoader::DataLoader(std::string directory){
     folder=directory;
+    path ="";
+    number_images = 0;
+    number_string = "";
+    zeros = "";
+    index = 0;
+    extension = "";
+
     if(folder!=CAR && folder!=BIRD && folder!=FROG && folder!=SHEEP && folder!=SQUIRREL){
-        cout<<"Error folder"<<endl;
+        std::cout<<"Error folder"<<std::endl;
     }else{
         path=PATHIMAGES+folder;
-        glob(path, folder_images, false);
-        number_images= folder_images.size();
+        
+        cv::glob(path, folder_images, false);
+        number_images = folder_images.size();
+        // glob returns a list of the files in the folder, we can exploit it for obtaining the extension
+        extension = folder_images[0].substr(folder_images[0].length()-4, 4);
     }
 }
 
-Mat DataLoader::LoadFirst(){
-    img=imread(path+"/0001"+".png");
-      if(!img.empty()){
-        extension=".png";
-        index=1;
-        return img;
-    }else{
-        img=imread(path+zeros+number_string+".jpg");
-        if(!img.empty()){
-            extension=".jpg";
-            index=1;
-            return img;
-        }else{
-            cout<<"Error no matching img"<<endl;
-            return Mat{};
-        }        
-    }
+
+cv::Mat DataLoader::load_test_img(){
+    return cv::imread(path+"/0000"+extension);
 }
 
-Mat DataLoader::LoadNext(){
-    index=index+1;
+cv::Mat DataLoader::load_next_img(){
+
     if(index>number_images){
-        cout<<"Out of index"<<endl;
-        return Mat{};
+        std::cout<<"Out of index"<<std::endl;
+        return cv::Mat{};
     }
     zeros="/";
-    number_string=to_string(index);
+    number_string=std::to_string(index);
     for(int i=0;i<4-number_string.length();i++){
         zeros=zeros+"0";
     }
-    img=imread(path+zeros+number_string+extension);
+    std::cout<< "reading file " << path+zeros+number_string+extension << std::endl;
+    img=cv::imread(path+zeros+number_string+extension);
+
+    index++;
     return img;
 
 }

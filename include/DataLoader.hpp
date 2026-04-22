@@ -4,8 +4,7 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 #include <iostream>
-using namespace cv;
-using namespace std;
+
 class DataLoader{
 
     private:
@@ -18,18 +17,18 @@ class DataLoader{
     std::string folder;
     std::string path;
     std::size_t number_images;
-    std::vector<String> folder_images;
-    string number_string;
-    Mat img;
-    string zeros;
+    std::vector<cv::String> folder_images;
+    std::string number_string;
+    cv::Mat img;
+    std::string zeros;
     int index;
-    string extension;
+    std::string extension;
 
 
     public:
     DataLoader(std::string directory);
-    Mat LoadFirst();
-    Mat LoadNext();
+    cv::Mat load_test_img();
+    cv::Mat load_next_img();
 
 };
 
