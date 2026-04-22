@@ -23,9 +23,17 @@ Mat LoadImg(string folder,int number){
         return Mat{};
     }
     img=imread(PATHIMAGES+folder+zeros+numberString+".png");
-    if(img.empty()){
-        return imread(PATHIMAGES+folder+zeros+numberString+".jpg");
-    }else{
+    if(!img.empty()){
         return img;
+    }else{
+        img=imread(PATHIMAGES+folder+zeros+numberString+".jpg");
+        if(!img.empty()){
+            return img;
+        }else{
+            cout<<"Error no matching img"<<endl;
+            return Mat{};
+        }
+        
     }
+
 }
