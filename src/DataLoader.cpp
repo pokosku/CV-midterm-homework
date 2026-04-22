@@ -7,6 +7,8 @@
     const string SHEEP="sheep";
     const string SQUIRREL="squirrel";
 
+// sta roba va resa una classe in modo da poter utilizzare var statiche
+// 1 dataloader dovrebbe corrispondere a 1 dataset (quindi a 1 cartella)
 Mat LoadImg(string folder,int number){
     string numberString=to_string(number);
     string zeros="/";
