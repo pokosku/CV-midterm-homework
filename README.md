@@ -1,17 +1,17 @@
 # Progetto: Visual Object Tracking via Feature Extraction
 
-## 1. Architettura Modulare
+## 1. Architettura Modulare 
 Il lavoro è suddiviso in tre moduli indipendenti che comunicano tramite interfacce standard (NumPy arrays).
 
 | Modulo | Responsabile | Input | Output |
 | :--- | :--- | :--- | :--- |
-| **Dataloader** | Collega A | Cartella Frame | Immagine (Matrice RGB/Gray) |
-| **Feature Detection** | **TU** | Immagine | Matrice Keypoints + Descrittori |
-| **Feature Matching** | Collega B | Descrittori (Frame t, t+1) | Omografia / Nuova BBox |
+| **Dataloader** | Daniele | Cartella Frame | Immagine (Matrice RGB/Gray) |
+| **Feature Detection** | Leo | Immagine | Matrice Keypoints + Descrittori |
+| **Feature Matching** | Zava | Descrittori (Frame t, t+1) | Omografia / Nuova BBox |
 
 ---
 
-## 2. Dettaglio Modulo: Feature Detection (Tuo Task)
+## 2. Dettaglio Modulo: Feature Detection
 
 Il tuo obiettivo è implementare una funzione che trasformi i pixel in "impronte digitali" matematiche.
 
