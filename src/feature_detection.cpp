@@ -10,5 +10,6 @@ cv::Mat detect_features(cv::Mat frame_1, cv::Mat frame_2){
     cv::absdiff(frame_1, frame_2, moving_mask);
 
     cv::threshold(moving_mask, moving_mask,20,255, cv::THRESH_BINARY);
-
+    
+    
 }
