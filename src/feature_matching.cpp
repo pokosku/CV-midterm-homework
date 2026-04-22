@@ -3,4 +3,3 @@
 
 using namespace cv;
 
-Mat a = Mat::zeros();
