@@ -23,7 +23,7 @@ DataLoader::DataLoader(std::string directory){
 
 
 cv::Mat DataLoader::load_test_img(){
-    return cv::imread(path+"/0000"+extension);
+    return cv::imread(path+"/0000"+extension,cv::IMREAD_COLOR_BGR);
 }
 
 cv::Mat DataLoader::load_next_img(){
@@ -38,7 +38,7 @@ cv::Mat DataLoader::load_next_img(){
         zeros=zeros+"0";
     }
     std::cout<< "reading file " << path+zeros+number_string+extension << std::endl;
-    img=cv::imread(path+zeros+number_string+extension);
+    img=cv::imread(path+zeros+number_string+extension,cv::IMREAD_COLOR_BGR);
 
     index++;
     return img;
