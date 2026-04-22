@@ -26,6 +26,7 @@ cv::Mat DataLoader::load_test_img(){
     return cv::imread(path+"/0000"+extension,cv::IMREAD_COLOR_BGR);
 }
 
+
 cv::Mat DataLoader::load_next_img(){
 
     if(index>number_images){
@@ -41,6 +42,25 @@ cv::Mat DataLoader::load_next_img(){
     img=cv::imread(path+zeros+number_string+extension,cv::IMREAD_COLOR_BGR);
 
     index++;
+    return img;
+
+}
+
+cv::Mat DataLoader::load_next_img(int step){
+
+    if(index>number_images){
+        std::cout<<"Out of index"<<std::endl;
+        return cv::Mat{};
+    }
+    zeros="/";
+    number_string=std::to_string(index);
+    for(int i=0;i<4-number_string.length();i++){
+        zeros=zeros+"0";
+    }
+    std::cout<< "reading file " << path+zeros+number_string+extension << std::endl;
+    img=cv::imread(path+zeros+number_string+extension);
+
+    index+=step;
     return img;
 
 }

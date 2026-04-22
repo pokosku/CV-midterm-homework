@@ -29,6 +29,7 @@ class DataLoader{
     DataLoader(std::string directory);
     cv::Mat load_test_img();
     cv::Mat load_next_img();
+    cv::Mat load_next_img(int step);
 
 };
 
