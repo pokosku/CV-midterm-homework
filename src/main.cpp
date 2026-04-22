@@ -6,9 +6,15 @@
 
 int main(int argc, char** argv){
     const string NAMEWINDOW="win";
-    Mat img=LoadImg("bird",1);
+    DataLoader dl= DataLoader("bird");
+    Mat img=dl.LoadFirst();
     namedWindow(NAMEWINDOW,WINDOW_NORMAL);
     imshow(NAMEWINDOW,img);
     waitKey(0);
+    img=dl.LoadNext();
+    namedWindow(NAMEWINDOW,WINDOW_NORMAL);
+    imshow(NAMEWINDOW,img);
+    waitKey(0);
+    
     return 0;
 }
