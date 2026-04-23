@@ -57,6 +57,12 @@ cv::Mat DataLoader::load_next_img(int step){
         std::cout<<"Out of index"<<std::endl;
         return cv::Mat{};
     }
+
+    cv::Mat img = cv::imread(folder_images[index]);
+    index+=step;
+
+    return img;
+    /*
     zeros="/";
     number_string=std::to_string(index);
     for(int i=0;i<4-number_string.length();i++){
@@ -67,5 +73,5 @@ cv::Mat DataLoader::load_next_img(int step){
 
     index+=step;
     return img;
-
+    */
 }
