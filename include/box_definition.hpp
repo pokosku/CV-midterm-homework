@@ -1,5 +1,6 @@
-#ifndef FEATURE_DETECTION_H
-#define FEATURE_DETECTION_H
+#ifndef BOX_DEFINITION_H
+#define BOX_DEFINITION_H
+
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core/core.hpp>

@@ -6,6 +6,7 @@ set(SOURCES
     src/DataLoader.cpp
     src/feature_detection.cpp
     src/feature_matching.cpp
+    src/box_definition.cpp
 )
 
 find_package(OpenCV REQUIRED)
