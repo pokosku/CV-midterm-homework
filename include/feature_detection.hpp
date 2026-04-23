@@ -6,6 +6,5 @@
 #include <opencv2/features2d.hpp>
 #include <iostream>
 
-cv::Mat detect_features(cv::Mat frame_1, cv::Mat frame_2);
-
+void detect_features(const cv::Mat& frame, std::vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors);
 #endif
