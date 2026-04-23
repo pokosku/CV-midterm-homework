@@ -5,6 +5,6 @@
 #include <iostream>
 #include <fstream>
 
-float calculateIoU(cv::Rect rectA,std::string folder);
+float calculate_IoU(cv::Rect rect_a,std::string folder);
 
 #endif
