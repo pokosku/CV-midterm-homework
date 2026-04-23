@@ -1,5 +1,6 @@
 #include "DataLoader.hpp"
 
+//constructor has to be fixed
 DataLoader::DataLoader(std::string directory){
     folder=directory;
     path ="";
