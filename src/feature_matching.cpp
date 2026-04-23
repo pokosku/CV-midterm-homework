@@ -10,8 +10,8 @@ std::vector<cv::Point2f> match_features(const cv::Mat& desc1,const std::vector<c
     cv::Mat output;
     
     //to be tested
-    double ratio_thresh = 0.7;
-    double movement_thresh = 5.0;
+    double ratio_thresh = 0.8;
+    double movement_thresh = 2.0;
     
     std::vector<cv::Point2f> points_on_object;
 

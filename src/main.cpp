@@ -10,7 +10,7 @@
 #include "box_definition.hpp"
 
 int main(int argc, char** argv){
-    DataLoader dl = DataLoader("frog");
+    DataLoader dl = DataLoader("squirrel");
     
     
     char pressed_key = 'q';
@@ -53,8 +53,14 @@ int main(int argc, char** argv){
 
 
     }
+
+    //stampa debug
+    std::cout << "Numero punti candidati: " << all_candidate_points.size() << std::endl;
     
     cv::Rect bbox = compute_box(all_candidate_points, frame_0);
+    //stampa debug
+    std::cout << "Bbox: " << bbox.x << " " << bbox.y << " " << bbox.width << " " << bbox.height << std::endl;
+
     cv::rectangle(test, bbox, cv::Scalar(0,0,255));
     
     cv::imshow("test", test);
