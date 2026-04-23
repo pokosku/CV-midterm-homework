@@ -22,8 +22,9 @@ DataLoader::DataLoader(std::string directory){
 }
 
 
+// we can just use folder_images to access image path
 cv::Mat DataLoader::load_test_img(){
-    return cv::imread(path+"/0000"+extension,cv::IMREAD_COLOR_BGR);
+    return cv::imread(folder_images[0]);
 }
 
 
@@ -33,6 +34,9 @@ cv::Mat DataLoader::load_next_img(){
         std::cout<<"Out of index"<<std::endl;
         return cv::Mat{};
     }
+
+    return cv::imread(folder_images[index++]);
+    /*
     zeros="/";
     number_string=std::to_string(index);
     for(int i=0;i<4-number_string.length();i++){
@@ -41,9 +45,10 @@ cv::Mat DataLoader::load_next_img(){
     std::cout<< "reading file " << path+zeros+number_string+extension << std::endl;
     img=cv::imread(path+zeros+number_string+extension,cv::IMREAD_COLOR_BGR);
 
+    
     index++;
     return img;
-
+    */
 }
 
 cv::Mat DataLoader::load_next_img(int step){
