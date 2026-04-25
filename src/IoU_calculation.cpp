@@ -27,7 +27,9 @@ float calculate_IoU(cv::Rect rect_a,std::string folder) {
         while(file >> x1 >> y1 >> x2 >> y2);
 
         //creating rect with labels found
-        cv::Rect rect_b(x1, y1, x2,y2);
+        float width = x2 - x1;
+        float height = y2 - y1;
+        cv::Rect rect_b(x1, y1, width, height);
         cv::Rect intersection = rect_a & rect_b;
 
         // Calculating areas

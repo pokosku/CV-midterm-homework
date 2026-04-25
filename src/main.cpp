@@ -8,62 +8,70 @@
 #include "feature_detection.hpp"
 #include "feature_matching.hpp"
 #include "box_definition.hpp"
+#include "IoU_calculation.hpp"
 
 int main(int argc, char** argv){
-    DataLoader dl = DataLoader("squirrel");
+
+    std::vector<std::string> classes = {"bird", "car", "frog", "sheep", "squirrel"};
+
+    int accuracy = 0;
+    float mean_IoU = 0;
     
-    
-    char pressed_key = 'q';
-    cv::Mat frame_0 = dl.load_next_img();
-    cv::Mat test = frame_0.clone();
-    std::vector<cv::KeyPoint> kp0;
-    cv::Mat descriptor0;
-    detect_features(frame_0, kp0, descriptor0);
-    cv::namedWindow("test");
-    
-    std::vector<cv::Point2f> all_candidate_points;
+    for(auto &c : classes){
 
-    cv::Mat frame_t = dl.load_next_img();
-    
+        DataLoader dl = DataLoader(c);
 
-    while(!frame_t.empty()){
-        std::vector<cv::KeyPoint> kp_t;
-        cv::Mat descriptor_t;
-        
-        detect_features(frame_t, kp_t, descriptor_t);
-
-        std::vector<cv::Point2f> points = match_features(descriptor0, kp0, descriptor_t, kp_t);
-
-        // Appending matched feature points to the candidate features for later clustering
-        all_candidate_points.insert(all_candidate_points.end(), points.begin(), points.end());
+        // initial feature detection of frame 0
+        cv::Mat frame_0 = dl.load_next_img();
+        std::vector<cv::KeyPoint> kp_0;
+        cv::Mat desc_0;
 
 
-        // Conversion of matched feature points (Point2f) to KeyPoints
-        std::vector<cv::KeyPoint> keypoints;
-        for(auto &p : points){
-            keypoints.push_back(cv::KeyPoint(p, 1.0));
+        detect_features(frame_0, kp_0, desc_0);
+
+        std::vector<cv::Point2f> all_candidate_points;
+
+        while(true){
+
+            cv::Mat frame_t = dl.load_next_img();
+
+            if(frame_t.empty()){
+                break;
+            }
+
+            std::vector<cv::KeyPoint> kp_t;
+            cv::Mat desc_t;
+            
+            detect_features(frame_t, kp_t, desc_t);
+
+            std::vector<cv::Point2f> points = match_features(desc_0, kp_0, desc_t, kp_t);
+
+            // Appending matched feature points to the candidate features for later clustering
+            all_candidate_points.insert(all_candidate_points.end(), points.begin(), points.end());
         }
+
+        //stampa debug
+        std::cout << "Numero punti candidati: " << all_candidate_points.size() << std::endl;
         
-        //cv::Mat output = frame_0.clone();
-        //cv::drawKeypoints(frame_0, keypoints, output);
-        //cv::imshow("test",output);
-        //pressed_key = cv::waitKey(0); 
+        cv::Rect bbox = define_bounding_box(all_candidate_points, frame_0.size());
 
-        frame_t = dl.load_next_img();
+        // for(auto &p : all_candidate_points){
+        //     cv::circle(frame_0, p, 1, cv::Scalar(0,0,255), 1);
+        // }
 
-
+        //evaluation
+        float IoU = calculate_IoU(bbox, c);
+        std::cout <<"IoU on " << c << ": "<< IoU << std::endl;
+        accuracy += IoU > 0.5;
+        mean_IoU += IoU;
     }
 
-    //stampa debug
-    std::cout << "Numero punti candidati: " << all_candidate_points.size() << std::endl;
-    
-    cv::Rect bbox = compute_box(all_candidate_points, frame_0);
-    //stampa debug
-    std::cout << "Bbox: " << bbox.x << " " << bbox.y << " " << bbox.width << " " << bbox.height << std::endl;
+    mean_IoU /= classes.size();
 
-    cv::rectangle(test, bbox, cv::Scalar(0,0,255));
+    std::cout <<"FINAL EVALUATION: " << std::endl;
+    std::cout <<"Mean IoU: " << mean_IoU<< std::endl;
+    std::cout <<"Accuracy: " << accuracy<<"/"<<classes.size()<< std::endl;
     
-    cv::imshow("test", test);
-    cv::waitKey(0);
+
     return 0;
 }

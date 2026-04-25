@@ -4,8 +4,9 @@ void detect_features(const cv::Mat& frame, std::vector<cv::KeyPoint>& keypoints,
 
     cv::Mat gray;
     cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-    cv::Ptr<cv::SIFT> sift = cv::SIFT::create(500, 3, 0.04, 10, 1.6);
+    cv::Ptr<cv::SIFT> sift = cv::SIFT::create();
     sift -> detectAndCompute(gray, cv::noArray(), keypoints, descriptors);
+
 
 }
    

@@ -7,5 +7,5 @@
 #include <opencv2/features2d.hpp>
 #include <iostream>
 
-cv::Rect compute_box(std::vector<cv::Point2f>& candidate_point, cv::Mat& frame1);
+cv::Rect define_bounding_box(const std::vector<cv::Point2f>& candidate_point, cv::Size frame_size);
 #endif

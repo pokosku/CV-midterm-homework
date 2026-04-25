@@ -7,18 +7,17 @@ std::vector<cv::Point2f> match_features(const cv::Mat& desc1,const std::vector<c
 
     // descriptors are stored in Mat
     matcher.knnMatch(desc1, desc2, knn_matches, 2);
-    cv::Mat output;
+
     
     //to be tested
-    double ratio_thresh = 0.8;
-    double movement_thresh = 2.0;
+    double ratio_thresh = 0.7; // Increased slightly to gather more candidates on hard images
+    double movement_thresh = 3.0;
     
     std::vector<cv::Point2f> points_on_object;
 
     for (size_t i = 0; i < knn_matches.size(); i++) {
         if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance) {
-            
-            
+                     
             cv::Point2f p0 = kp1[knn_matches[i][0].queryIdx].pt;
             cv::Point2f pN = kp2[knn_matches[i][0].trainIdx].pt;
 
@@ -28,10 +27,6 @@ std::vector<cv::Point2f> match_features(const cv::Mat& desc1,const std::vector<c
                 points_on_object.push_back(p0);
             }
         }
-    }  
-    //cv::drawKeypoints(moving_mask, keypoints, output);
-    
+    }   
     return points_on_object;
-
 }
-
