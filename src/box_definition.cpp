@@ -1,17 +1,11 @@
 #include "box_definition.hpp"
-#include <algorithm>
-#include <cmath>
-#include <vector>
-
-#include "box_definition.hpp"
-
-#include "box_definition.hpp"
 
 cv::Rect define_bounding_box(const std::vector<cv::Point2f>& points, cv::Size frame_size) {
     if (points.empty()) return cv::Rect(0, 0, 0, 0);
 
     // 1. Clustering spaziale
     std::vector<int> labels;
+
     // Soglia di distanza: se due punti sono entro 40 pixel, sono "parenti"
     float dist_threshold = 40.0f; 
     

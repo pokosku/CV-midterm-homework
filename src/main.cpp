@@ -55,15 +55,20 @@ int main(int argc, char** argv){
         
         cv::Rect bbox = define_bounding_box(all_candidate_points, frame_0.size());
 
-        // for(auto &p : all_candidate_points){
-        //     cv::circle(frame_0, p, 1, cv::Scalar(0,0,255), 1);
-        // }
+        for(auto &p : all_candidate_points){
+            cv::circle(frame_0, p, 1, cv::Scalar(0,0,255), 1);
+        }
 
         //evaluation
         float IoU = calculate_IoU(bbox, c);
         std::cout <<"IoU on " << c << ": "<< IoU << std::endl;
         accuracy += IoU > 0.5;
         mean_IoU += IoU;
+
+        cv::rectangle(frame_0, bbox, cv::Scalar(0,0,255));
+        cv::namedWindow("rect", cv::WINDOW_NORMAL);
+        cv::imshow("rect", frame_0);
+        cv::waitKey(0);
     }
 
     mean_IoU /= classes.size();
@@ -72,6 +77,6 @@ int main(int argc, char** argv){
     std::cout <<"Mean IoU: " << mean_IoU<< std::endl;
     std::cout <<"Accuracy: " << accuracy<<"/"<<classes.size()<< std::endl;
     
-
+    cv::destroyAllWindows();
     return 0;
 }
