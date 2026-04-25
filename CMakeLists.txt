@@ -8,6 +8,7 @@ set(SOURCES
     src/feature_matching.cpp
     src/box_definition.cpp
     src/IoU_calculation.cpp
+    src/optical_flow.cpp
 )
 
 find_package(OpenCV REQUIRED)
