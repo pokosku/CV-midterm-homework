@@ -1,104 +1,74 @@
 #include "optical_flow.hpp"
 
-// Resta invariata, utile per confronti veloci tra due frame
-std::vector<cv::Point2f> optical_flow_tracking(const cv::Mat& frame1, const cv::Mat& frame2,
-     const std::vector<cv::KeyPoint>& kp1, double movement_thresh){
+// Traccia i punti dal primo all'ultimo frame e restituisce quanto si è mosso ogni punto
+std::vector<float> track_features(const std::vector<cv::Mat>& frames, const std::vector<cv::Point2f>& p0) {
+    std::vector<cv::Point2f> p_current = p0;
+    std::vector<float> total_displacements(p0.size(), 0.0f);
     
-    cv::Mat gray_1, gray_2;
-    cv::cvtColor(frame1, gray_1, cv::COLOR_BGR2GRAY);
-    cv::cvtColor(frame2, gray_2, cv::COLOR_BGR2GRAY);
+    cv::Mat gray_prev, gray_curr;
+    cv::cvtColor(frames[0], gray_prev, cv::COLOR_BGR2GRAY);
 
-    std::vector<cv::Point2f> points1;
-    cv::KeyPoint::convert(kp1, points1);
+    for (size_t i = 1; i < frames.size(); ++i) {
+        cv::cvtColor(frames[i], gray_curr, cv::COLOR_BGR2GRAY);
+        std::vector<cv::Point2f> p_next;
+        std::vector<uchar> status;
+        std::vector<float> err;
 
-    std::vector<cv::Point2f> points2;
-    std::vector<uchar> status;
-    std::vector<float> errors;
+        cv::calcOpticalFlowPyrLK(gray_prev, gray_curr, p_current, p_next, status, err);
 
-    cv::calcOpticalFlowPyrLK(gray_1, gray_2, points1, points2, status, errors, cv::Size(21,21), 3);
-
-    std::vector<cv::Point2f> moving_points;
-    for (int i = 0; i < points1.size(); i++) {
-        if (status[i] == 1) { 
-            float dist = cv::norm(points1[i] - points2[i]);
-            if (dist > movement_thresh) {
-                moving_points.push_back(points1[i]); 
-            }
+        for (size_t j = 0; j < p0.size(); ++j) {
+                if (status[j]) {
+                    total_displacements[j] = (float)cv::norm(p_next[j] - p0[j]);
+                    p_current[j] = p_next[j]; 
+                } else {
+                    total_displacements[j] = -1.0f;
+                }
         }
+        gray_prev = gray_curr.clone();
     }
-    return moving_points;
+    return total_displacements;
 }
 
-std::vector<cv::Point2f> optical_flow_consecutive(
-                                const std::vector<cv::Mat>& frames,
-                                const std::vector<cv::KeyPoint>& kp0,
-                                double movement_thresh) {
-
-    std::vector<cv::Point2f> current_points;
-    cv::KeyPoint::convert(kp0, current_points);
-    std::vector<cv::Point2f> original_points = current_points;
+// Filtra i punti iniziali usando Otsu sugli spostamenti
+std::vector<cv::Point2f> filter_moving_points(const std::vector<cv::Point2f>& p0, 
+                                              const std::vector<float>& displacements, 
+                                              cv::Size img_size) {
+    cv::Mat heatmap = cv::Mat::zeros(img_size, CV_8UC1);
     
-    // Sostituiamo il boolean con un contatore di "eventi dinamici"
-    std::vector<int> dynamic_count(current_points.size(), 0);
-    // Teniamo traccia di quante volte ogni punto è stato effettivamente tracciato
-    std::vector<int> appearance_count(current_points.size(), 0);
-    std::vector<bool> valid(current_points.size(), true);
+    // Trova il movimento massimo per normalizzare
+    float max_d = 0;
+    for (float d : displacements) if (d > max_d) max_d = d;
+    if (max_d < 2.0f) return {}; // Se tutto si muove meno di 2 pixel, è solo rumore
 
-    for (int i = 0; i < (int)frames.size() - 1; i++) {
-        cv::Mat gray1, gray2;
-        cv::cvtColor(frames[i], gray1, cv::COLOR_BGR2GRAY);
-        cv::cvtColor(frames[i+1], gray2, cv::COLOR_BGR2GRAY);
+    for (size_t i = 0; i < p0.size(); ++i) {
+        // FILTRO ANTIRUMORE: ignora chi si è mosso meno di 1.5 pixel in totale
+        if (displacements[i] < 1.5f) continue; 
 
-        std::vector<cv::Point2f> pts_to_track, pts_next;
-        std::vector<int> valid_indices;
-        
-        for (int j = 0; j < (int)current_points.size(); j++) {
-            if (valid[j]) {
-                pts_to_track.push_back(current_points[j]);
-                valid_indices.push_back(j);
-            }
-        }
+        uchar val = static_cast<uchar>((displacements[i] / max_d) * 255);
+        // Usa un raggio più piccolo (3 invece di 5) per non "gonfiare" troppo la box
+        cv::circle(heatmap, p0[i], 3, cv::Scalar(val), -1);
+    }
 
-        if (pts_to_track.size() < 4) break; 
+    cv::Mat mask;
+    cv::threshold(heatmap, mask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
-        std::vector<uchar> status;
-        std::vector<float> errors;
-        cv::calcOpticalFlowPyrLK(gray1, gray2, pts_to_track, pts_next, status, errors, cv::Size(21,21), 3);
+    // MORFOLOGIA: Fondamentale per CAR e SQUIRREL
+    // L'apertura toglie i puntini isolati (rumore sullo sfondo)
+    // La dilatazione unisce i punti dell'oggetto (es. ruote e carrozzeria della car)
+    cv::Mat kernel_small = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::Mat kernel_big = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
+    
+    cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kernel_small);
+    cv::dilate(mask, mask, kernel_big); 
 
-        std::vector<uchar> mask;
-        // Calcoliamo il movimento globale (sfondo)
-        cv::findHomography(pts_to_track, pts_next, cv::RANSAC, 3.0, mask);
-
-        for (int j = 0; j < (int)valid_indices.size(); j++) {
-            int idx = valid_indices[j];
-            if (status[j] == 1) {
-                current_points[idx] = pts_next[j];
-                appearance_count[idx]++; // Il punto è ancora visibile
-
-                // SE è un outlier del RANSAC, allora si sta muovendo diversamente dallo sfondo
-                if (mask.empty() || mask[j] == 0) {
-                    // movement_thresh qui aiuta a ignorare micro-vibrazioni
-                    if (cv::norm(pts_to_track[j] - pts_next[j]) > 0.5) { 
-                        dynamic_count[idx]++;
-                    }
-                }
-            } else {
-                valid[idx] = false;
+    std::vector<cv::Point2f> object_points;
+    for (size_t i = 0; i < p0.size(); ++i) {
+        cv::Point pt(cvRound(p0[i].x), cvRound(p0[i].y));
+        if (pt.x >= 0 && pt.x < img_size.width && pt.y >= 0 && pt.y < img_size.height) {
+            if (mask.at<uchar>(pt) > 0) {
+                object_points.push_back(p0[i]);
             }
         }
     }
-
-    std::vector<cv::Point2f> moving_points;
-    for (int i = 0; i < (int)original_points.size(); i++) {
-        if (appearance_count[i] > 0) {
-            // Un punto è "buono" se è risultato dinamico per almeno il 30% della sua vita
-            float dynamic_ratio = (float)dynamic_count[i] / (float)appearance_count[i];
-            
-            if (dynamic_ratio > 0.3f) { 
-                moving_points.push_back(original_points[i]);
-            }
-        }
-    }
-
-    return moving_points;
+    return object_points;
 }

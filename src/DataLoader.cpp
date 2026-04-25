@@ -31,8 +31,8 @@ cv::Mat DataLoader::load_test_img(){
 
 cv::Mat DataLoader::load_next_img(){
 
-    if(index>number_images-1){
-        std::cout<<"Out of index"<<std::endl;
+    if(index>=number_images){
+        //std::cout<<"Out of index"<<std::endl;
         return cv::Mat{};
     }
 
@@ -54,8 +54,8 @@ cv::Mat DataLoader::load_next_img(){
 
 cv::Mat DataLoader::load_next_img(int step){
 
-    if(index>number_images){
-        std::cout<<"Out of index"<<std::endl;
+    if(index>=number_images){
+        //std::cout<<"Out of index"<<std::endl;
         return cv::Mat{};
     }
 

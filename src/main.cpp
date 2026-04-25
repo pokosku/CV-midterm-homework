@@ -11,45 +11,90 @@
 #include "box_definition.hpp"
 #include "IoU_calculation.hpp"
 
-int main(int argc, char** argv){
+cv::Rect get_final_bbox(const std::vector<cv::Mat>& video_frames) {
+    // Fase 1: Trova feature sul Frame 0 (tua funzione)
+    std::vector<cv::Point2f> p0;
+    detect_feature_gftt(video_frames[0], p0);
 
-    std::string folder = "frog";
-    DataLoader dl = DataLoader(folder);
+    // Fase 2: Tracking (Optical Flow)
+    std::vector<float> movements = track_features(video_frames, p0);
 
-    cv::Mat frame_0 = dl.load_next_img();
-    cv::Mat test = frame_0.clone();
-    std::vector<cv::KeyPoint> kp0;
-    cv::Mat descriptor0;
-    detect_features(frame_0, kp0, descriptor0);
-    cv::namedWindow("test");
+    // Fase 3: Segmentazione (Otsu)
+    std::vector<cv::Point2f> object_points = filter_moving_points(p0, movements, video_frames[0].size());
 
-    // carica tutti i frame in un vettore
-    std::vector<cv::Mat> frames;
-    frames.push_back(frame_0);
-    cv::Mat frame_t = dl.load_next_img();
-    while (!frame_t.empty()) {
-        frames.push_back(frame_t);
-        frame_t = dl.load_next_img();
+    // Fase 4: Box finale
+    if (object_points.empty()) return cv::Rect();
+    return cv::boundingRect(object_points);
+}
+
+int main(int argc, char** argv) {
+    // 1. Definizione delle classi da analizzare
+    std::vector<std::string> classes = {"bird", "car", "frog", "sheep", "squirrel"};
+    
+    float total_iou = 0.0f;
+    int correct_predictions = 0;
+    int total_classes = static_cast<int>(classes.size());
+
+    std::cout << "--- ANALISI PERFORMANCE TRACKING ---" << std::endl;
+    std::cout << std::left << std::setw(12) << "CLASSE" 
+              << std::setw(10) << "IoU" 
+              << "ESITO (IoU > 0.5)" << std::endl;
+    std::cout << "---------------------------------------------------" << std::endl;
+
+    for (const std::string& folder : classes) {
+        // 2. Caricamento dei frame per la classe corrente
+        DataLoader dl(folder);
+        std::vector<cv::Mat> frames;
+        
+        cv::Mat frame_t = dl.load_next_img();
+        while (!frame_t.empty()) {
+            frames.push_back(frame_t.clone());
+            frame_t = dl.load_next_img();
+        }
+
+        if (frames.empty()) {
+            std::cerr << "Errore: nessun frame trovato per " << folder << std::endl;
+            continue;
+        }
+
+        // 3. Esecuzione algoritmo (Pipeline Optical Flow + Otsu)
+        // Utilizziamo la funzione get_final_bbox che hai giÃ definito
+        cv::Rect predicted_box = get_final_bbox(frames);
+
+        // 4. Calcolo metriche
+        float current_iou = calculate_IoU(predicted_box, folder);
+        
+        // Se calculate_IoU restituisce -1 (errore), lo gestiamo come 0 per le statistiche
+        float valid_iou = (current_iou < 0) ? 0.0f : current_iou;
+        total_iou += valid_iou;
+
+        bool is_accurate = (valid_iou > 0.5f);
+        if (is_accurate) {
+            correct_predictions++;
+        }
+
+        // 5. Output riga per classe
+        std::cout << std::left << std::setw(12) << folder 
+                  << std::setw(10) << std::fixed << std::setprecision(3) << valid_iou 
+                  << (is_accurate ? "[OK]" : "[FAIL]") << std::endl;
+        
+        // Opzionale: Mostra il risultato a video per ogni classe
+        /*
+        cv::Mat display = frames[0].clone();
+        cv::rectangle(display, predicted_box, cv::Scalar(0, 255, 0), 2);
+        cv::imshow("Risultato: " + folder, display);
+        cv::waitKey(500); // Mezzo secondo di pausa tra le classi
+        */
     }
 
-    std::cout << "Numero frame caricati: " << frames.size() << std::endl;
+    // 6. Calcolo e stampa risultati finali
+    float mean_iou = total_iou / total_classes;
+    float accuracy = (static_cast<float>(correct_predictions) / total_classes) * 100.0f;
 
-    // tracka con optical flow consecutivo
-    std::vector<cv::Point2f> all_candidate_points = optical_flow_consecutive(
-        frames,
-        kp0,
-        5.0  // soglia sullo spostamento accumulato
-    );
+    std::cout << "---------------------------------------------------" << std::endl;
+    std::cout << "IoU MEDIA:    " << std::fixed << std::setprecision(3) << mean_iou << std::endl;
+    std::cout << "ACCURACY:     " << std::fixed << std::setprecision(2) << accuracy << "%" << std::endl;
+    std::cout << "---------------------------------------------------" << std::endl;
 
-    std::cout << "Numero punti candidati: " << all_candidate_points.size() << std::endl;
-
-    cv::Rect bbox = compute_box(all_candidate_points, frame_0);
-    std::cout << "Bbox: " << bbox.x << " " << bbox.y << " " << bbox.width << " " << bbox.height << std::endl;
-
-    std::cout<<"IoU found:"<<calculate_IoU(cv::Rect( bbox.x, bbox.y,bbox.x+bbox.width,bbox.y+bbox.height),folder)<<std::endl;
-
-    cv::rectangle(test, bbox, cv::Scalar(0,0,255));
-    cv::imshow("test", test);
-    cv::waitKey(0);
     return 0;
 }
