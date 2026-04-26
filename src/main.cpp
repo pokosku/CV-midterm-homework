@@ -11,26 +11,11 @@
 #include "box_definition.hpp"
 #include "IoU_calculation.hpp"
 
-cv::Rect get_final_bbox(const std::vector<cv::Mat>& video_frames) {
-    // Fase 1: Trova feature sul Frame 0 (tua funzione)
-    std::vector<cv::Point2f> p0;
-    detect_feature_gftt(video_frames[0], p0);
-
-    // Fase 2: Tracking (Optical Flow)
-    std::vector<float> movements = track_features(video_frames, p0);
-
-    // Fase 3: Segmentazione (Otsu)
-    std::vector<cv::Point2f> object_points = filter_moving_points(p0, movements, video_frames[0].size());
-
-    // Fase 4: Box finale
-    if (object_points.empty()) return cv::Rect();
-    return cv::boundingRect(object_points);
-}
 
 int main(int argc, char** argv) {
     // 1. Definizione delle classi da analizzare
     std::vector<std::string> classes = {"bird", "car", "frog", "sheep", "squirrel"};
-    
+    std::string win="win";
     float total_iou = 0.0f;
     int correct_predictions = 0;
     int total_classes = static_cast<int>(classes.size());
@@ -88,7 +73,8 @@ int main(int argc, char** argv) {
         
         cv::Mat display = frames[0].clone();
         cv::rectangle(display, predicted_box, cv::Scalar(0, 255, 0), 2);
-        cv::imshow("Risultato: " + folder, display);
+        cv::namedWindow(win+folder,cv::WINDOW_NORMAL);
+        cv::imshow(win+folder, display);
         cv::waitKey(0); // Mezzo secondo di pausa tra le classi
         
     }

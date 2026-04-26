@@ -9,14 +9,13 @@ cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2) {
     cv::cvtColor(frame2, gray2, cv::COLOR_BGR2GRAY);
     
     // Un leggero blur uccide il rumore di fondo
-    cv::GaussianBlur(gray1, gray1, cv::Size(5, 5), 0);
-    cv::GaussianBlur(gray2, gray2, cv::Size(5, 5), 0);
+    cv::GaussianBlur(gray1, gray1, cv::Size(3, 3), 0);
+    cv::GaussianBlur(gray2, gray2, cv::Size(3, 3), 0);
 
     // 2. Calcolo Optical Flow Denso (Farneback)
     cv::Mat flow;
     // Parametri classici bilanciati per precisione e velocità
-    cv::calcOpticalFlowFarneback(gray1, gray2, flow, 
-                                 0.5, 3, 15, 3, 5, 1.2, 0);
+    cv::calcOpticalFlowFarneback(gray1, gray2, flow, 0.5, 3, 15, 3, 5, 1.2, 0);
 
     // 3. Separazione canali (X, Y) e calcolo Magnitudo
     cv::Mat flow_parts[2];
@@ -50,7 +49,6 @@ cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2) {
 
     return mask;
 } 
-
 cv::Rect get_smart_bbox(const cv::Mat& mask) {
     std::vector<std::vector<cv::Point>> contours;
     
@@ -61,30 +59,25 @@ cv::Rect get_smart_bbox(const cv::Mat& mask) {
         return cv::Rect(0, 0, 0, 0);
     }
 
-    // Se ci sono più contorni, possiamo unirli tutti in una grande Box 
-    // (utile se l'algoritmo spezza in due l'animale)
-    int x_min = mask.cols, y_min = mask.rows;
-    int x_max = 0, y_max = 0;
+    double max_area = 0;
+    cv::Rect best_box(0, 0, 0, 0);
 
-    bool found_valid_contour = false;
-
-
-
-
+    // Troviamo SOLO il contorno con l'area maggiore (il soggetto principale)
     for (const auto& contour : contours) {
-        cv::Rect box = cv::boundingRect(contour);
+        double current_area = cv::contourArea(contour);
         
-        // Ignoriamo i box microscopici (probabile rumore residuo)
-        if (box.area() < 150) continue; 
-        
-        found_valid_contour = true;
-        if (box.x < x_min) x_min = box.x;
-        if (box.y < y_min) y_min = box.y;
-        if (box.x + box.width > x_max) x_max = box.x + box.width;
-        if (box.y + box.height > y_max) y_max = box.y + box.height;
+        if (current_area > max_area) {
+            max_area = current_area;
+            best_box = cv::boundingRect(contour);
+        }
     }
 
-    if (!found_valid_contour) return cv::Rect(0, 0, 0, 0);
+    // Ignoriamo tutto se perfino il contorno più grande è solo polvere/rumore
+    if (max_area < 150) {
+        return cv::Rect(0, 0, 0, 0);
+    }
 
-    return cv::Rect(x_min, y_min, x_max - x_min, y_max - y_min);
+    // Restituiamo strettamente la box del soggetto principale, 
+    // ignorando eventuali altri contorni lontani.
+    return best_box;
 }
