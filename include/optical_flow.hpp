@@ -14,4 +14,8 @@ std::vector<float> track_features(const std::vector<cv::Mat>& frames, const std:
 std::vector<cv::Point2f> filter_moving_points(const std::vector<cv::Point2f>& p0, 
                                               const std::vector<float>& displacements, 
                                               cv::Size img_size);
+
+cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2);
+cv::Rect get_smart_bbox(const cv::Mat& mask);
+
 #endif

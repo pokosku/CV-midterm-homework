@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
         // 2. Caricamento dei frame per la classe corrente
         DataLoader dl(folder);
         std::vector<cv::Mat> frames;
-        
+
         cv::Mat frame_t = dl.load_next_img();
         while (!frame_t.empty()) {
             frames.push_back(frame_t.clone());
@@ -57,11 +57,17 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        // 3. Esecuzione algoritmo (Pipeline Optical Flow + Otsu)
-        // Utilizziamo la funzione get_final_bbox che hai giÃ definito
-        cv::Rect predicted_box = get_final_bbox(frames);
+        int interval = frames.size() /20;
+        if(interval <2){
+            interval=2;
+        }
+        cv::Mat frame_start = frames[0];
+        cv::Mat frame_end = frames[interval];
 
-        // 4. Calcolo metriche
+        cv::Mat motion_mask = get_refined_motion_mask(frame_start, frame_end);
+
+        cv::Rect predicted_box = get_smart_bbox(motion_mask);
+
         float current_iou = calculate_IoU(predicted_box, folder);
         
         // Se calculate_IoU restituisce -1 (errore), lo gestiamo come 0 per le statistiche
@@ -79,12 +85,12 @@ int main(int argc, char** argv) {
                   << (is_accurate ? "[OK]" : "[FAIL]") << std::endl;
         
         // Opzionale: Mostra il risultato a video per ogni classe
-        /*
+        
         cv::Mat display = frames[0].clone();
         cv::rectangle(display, predicted_box, cv::Scalar(0, 255, 0), 2);
         cv::imshow("Risultato: " + folder, display);
-        cv::waitKey(500); // Mezzo secondo di pausa tra le classi
-        */
+        cv::waitKey(0); // Mezzo secondo di pausa tra le classi
+        
     }
 
     // 6. Calcolo e stampa risultati finali

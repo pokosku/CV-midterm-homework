@@ -1,74 +1,90 @@
 #include "optical_flow.hpp"
 
-// Traccia i punti dal primo all'ultimo frame e restituisce quanto si è mosso ogni punto
-std::vector<float> track_features(const std::vector<cv::Mat>& frames, const std::vector<cv::Point2f>& p0) {
-    std::vector<cv::Point2f> p_current = p0;
-    std::vector<float> total_displacements(p0.size(), 0.0f);
+// Funzione che prende due frame e restituisce la maschera binaria del movimento
+cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2) {
+ cv::Mat gray1, gray2;
     
-    cv::Mat gray_prev, gray_curr;
-    cv::cvtColor(frames[0], gray_prev, cv::COLOR_BGR2GRAY);
-
-    for (size_t i = 1; i < frames.size(); ++i) {
-        cv::cvtColor(frames[i], gray_curr, cv::COLOR_BGR2GRAY);
-        std::vector<cv::Point2f> p_next;
-        std::vector<uchar> status;
-        std::vector<float> err;
-
-        cv::calcOpticalFlowPyrLK(gray_prev, gray_curr, p_current, p_next, status, err);
-
-        for (size_t j = 0; j < p0.size(); ++j) {
-                if (status[j]) {
-                    total_displacements[j] = (float)cv::norm(p_next[j] - p0[j]);
-                    p_current[j] = p_next[j]; 
-                } else {
-                    total_displacements[j] = -1.0f;
-                }
-        }
-        gray_prev = gray_curr.clone();
-    }
-    return total_displacements;
-}
-
-// Filtra i punti iniziali usando Otsu sugli spostamenti
-std::vector<cv::Point2f> filter_moving_points(const std::vector<cv::Point2f>& p0, 
-                                              const std::vector<float>& displacements, 
-                                              cv::Size img_size) {
-    cv::Mat heatmap = cv::Mat::zeros(img_size, CV_8UC1);
+    // 1. Pre-Processing
+    cv::cvtColor(frame1, gray1, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(frame2, gray2, cv::COLOR_BGR2GRAY);
     
-    // Trova il movimento massimo per normalizzare
-    float max_d = 0;
-    for (float d : displacements) if (d > max_d) max_d = d;
-    if (max_d < 2.0f) return {}; // Se tutto si muove meno di 2 pixel, è solo rumore
+    // Un leggero blur uccide il rumore di fondo
+    cv::GaussianBlur(gray1, gray1, cv::Size(5, 5), 0);
+    cv::GaussianBlur(gray2, gray2, cv::Size(5, 5), 0);
 
-    for (size_t i = 0; i < p0.size(); ++i) {
-        // FILTRO ANTIRUMORE: ignora chi si è mosso meno di 1.5 pixel in totale
-        if (displacements[i] < 1.5f) continue; 
+    // 2. Calcolo Optical Flow Denso (Farneback)
+    cv::Mat flow;
+    // Parametri classici bilanciati per precisione e velocità
+    cv::calcOpticalFlowFarneback(gray1, gray2, flow, 
+                                 0.5, 3, 15, 3, 5, 1.2, 0);
 
-        uchar val = static_cast<uchar>((displacements[i] / max_d) * 255);
-        // Usa un raggio più piccolo (3 invece di 5) per non "gonfiare" troppo la box
-        cv::circle(heatmap, p0[i], 3, cv::Scalar(val), -1);
+    // 3. Separazione canali (X, Y) e calcolo Magnitudo
+    cv::Mat flow_parts[2];
+    cv::split(flow, flow_parts); // flow_parts[0] = X, flow_parts[1] = Y
+    
+    cv::Mat magnitude, angle;
+    cv::cartToPolar(flow_parts[0], flow_parts[1], magnitude, angle, true);
+
+    // [Controllo di sicurezza]: Se non si muove niente, restituisci maschera vuota
+    double min_val, max_val;
+    cv::minMaxLoc(magnitude, &min_val, &max_val);
+    if (max_val < 1.0) { // Nessun pixel si è mosso più di 1 pixel
+        return cv::Mat::zeros(gray1.size(), CV_8U);
     }
 
-    cv::Mat mask;
-    cv::threshold(heatmap, mask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-
-    // MORFOLOGIA: Fondamentale per CAR e SQUIRREL
-    // L'apertura toglie i puntini isolati (rumore sullo sfondo)
-    // La dilatazione unisce i punti dell'oggetto (es. ruote e carrozzeria della car)
-    cv::Mat kernel_small = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-    cv::Mat kernel_big = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
+    // 4. Segmentazione (Creazione Maschera)
+    cv::Mat mag_norm, mask;
+    // Portiamo i valori nel range 0-255 per poter usare Otsu
+    cv::normalize(magnitude, mag_norm, 0, 255, cv::NORM_MINMAX);
+    mag_norm.convertTo(mag_norm, CV_8U);
     
-    cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kernel_small);
-    cv::dilate(mask, mask, kernel_big); 
+    // Applichiamo Otsu per trovare automaticamente la soglia ideale
+    cv::threshold(mag_norm, mask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
-    std::vector<cv::Point2f> object_points;
-    for (size_t i = 0; i < p0.size(); ++i) {
-        cv::Point pt(cvRound(p0[i].x), cvRound(p0[i].y));
-        if (pt.x >= 0 && pt.x < img_size.width && pt.y >= 0 && pt.y < img_size.height) {
-            if (mask.at<uchar>(pt) > 0) {
-                object_points.push_back(p0[i]);
-            }
-        }
+    // 5. Pulizia Morfologica
+    cv::Mat kOpen = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
+    cv::Mat kClose = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(21, 21));
+    
+    cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kOpen);   // Toglie i puntini di rumore
+    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kClose); // Compatta l'oggetto (es. unisce testa e coda)
+
+    return mask;
+} 
+
+cv::Rect get_smart_bbox(const cv::Mat& mask) {
+    std::vector<std::vector<cv::Point>> contours;
+    
+    // Trova i contorni degli "ammassi" bianchi nella maschera
+    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    if (contours.empty()) {
+        return cv::Rect(0, 0, 0, 0);
     }
-    return object_points;
+
+    // Se ci sono più contorni, possiamo unirli tutti in una grande Box 
+    // (utile se l'algoritmo spezza in due l'animale)
+    int x_min = mask.cols, y_min = mask.rows;
+    int x_max = 0, y_max = 0;
+
+    bool found_valid_contour = false;
+
+
+
+
+    for (const auto& contour : contours) {
+        cv::Rect box = cv::boundingRect(contour);
+        
+        // Ignoriamo i box microscopici (probabile rumore residuo)
+        if (box.area() < 150) continue; 
+        
+        found_valid_contour = true;
+        if (box.x < x_min) x_min = box.x;
+        if (box.y < y_min) y_min = box.y;
+        if (box.x + box.width > x_max) x_max = box.x + box.width;
+        if (box.y + box.height > y_max) y_max = box.y + box.height;
+    }
+
+    if (!found_valid_contour) return cv::Rect(0, 0, 0, 0);
+
+    return cv::Rect(x_min, y_min, x_max - x_min, y_max - y_min);
 }
