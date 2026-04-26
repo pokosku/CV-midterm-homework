@@ -6,7 +6,7 @@
 #include <opencv2/features2d.hpp>
 #include <iostream>
 
-void detect_features_sift(const cv::Mat& frame, std::vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors);
-void detect_feature_gftt(const cv::Mat& frame, std::vector<cv::Point2f>& keypoints);
+void detect_features(const cv::Mat& frame, std::vector<cv::KeyPoint>& keypoints, cv::Mat& descriptors);
+
 
 #endif

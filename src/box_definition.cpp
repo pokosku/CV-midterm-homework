@@ -3,74 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-// Funzione helper per calcolare la mediana di un vettore di float
-float get_median(std::vector<float>& values) {
-    if (values.empty()) return 0.0f;
-    size_t n = values.size() / 2;
-    std::nth_element(values.begin(), values.begin() + n, values.end());
-    return values[n];
-}
 
-cv::Rect compute_box(std::vector<cv::Point2f>& candidate_points, cv::Mat& frame1) {
-    if (candidate_points.empty()) {
-        return cv::Rect(0, 0, 0, 0);
-    }
-
-    // 1. Estrazione coordinate
-    std::vector<float> x_coords, y_coords;
-    for (const auto& p : candidate_points) {
-        x_coords.push_back(p.x);
-        y_coords.push_back(p.y);
-    }
-
-    // 2. Calcolo Mediana (Centro Robusto)
-    std::vector<float> x_copy = x_coords;
-    std::vector<float> y_copy = y_coords;
-    float medianX = get_median(x_copy);
-    float medianY = get_median(y_copy);
-
-    // 3. Calcolo del MAD (Median Absolute Deviation)
-    // È l'equivalente robusto della deviazione standard
-    std::vector<float> diffX, diffY;
-    for (float x : x_coords) diffX.push_back(std::abs(x - medianX));
-    for (float y : y_coords) diffY.push_back(std::abs(y - medianY));
-    
-    float madX = get_median(diffX);
-    float madY = get_median(diffY);
-
-    // 4. Filtraggio Outlier basato su MAD
-    // Una soglia tipica è tra 2.0 e 3.0. Più è bassa, più la box è "stretta" sul nucleo dei punti.
-    std::vector<cv::Point2f> filtered_points;
-    float multiplier = 2.5f; 
-
-    for (const auto& p : candidate_points) {
-        if (std::abs(p.x - medianX) < multiplier * madX &&
-            std::abs(p.y - medianY) < multiplier * madY) {
-            filtered_points.push_back(p);
-        }
-    }
-
-    // Fallback se il filtro è troppo severo
-    if (filtered_points.size() < 3) {
-        filtered_points = candidate_points;
-    }
-
-    // 5. Calcolo Bounding Box
-    cv::Rect box = cv::boundingRect(filtered_points);
-
-    // 6. Padding Dinamico
-    // Invece di un 10% fisso, usiamo un piccolo margine per compensare il fatto 
-    // che le feature sono spesso interne ai bordi dell'oggetto.
-    int padding_w = static_cast<int>(box.width * 0.15);
-    int padding_h = static_cast<int>(box.height * 0.15);
-    
-    box.x = std::max(0, box.x - padding_w);
-    box.y = std::max(0, box.y - padding_h);
-    box.width = std::min(frame1.cols - box.x, box.width + 2 * padding_w);
-    box.height = std::min(frame1.rows - box.y, box.height + 2 * padding_h);
-
-    return box;
-}
 
 cv::Rect get_smart_bbox(const cv::Mat& mask) {
     std::vector<std::vector<cv::Point>> contours;
@@ -103,4 +36,39 @@ cv::Rect get_smart_bbox(const cv::Mat& mask) {
     // Restituiamo strettamente la box del soggetto principale, 
     // ignorando eventuali altri contorni lontani.
     return best_box;
+
+}
+
+cv::Rect define_bounding_box(const std::vector<cv::Point2f>& points, cv::Size frame_size) {
+    if (points.empty()) return cv::Rect(0, 0, 0, 0);
+
+    // 1. Clustering spaziale
+    std::vector<int> labels;
+
+    // Soglia di distanza: se due punti sono entro 40 pixel, sono "parenti"
+    float dist_threshold = 40.0f; 
+    
+    int n_clusters = cv::partition(points, labels, [dist_threshold](const cv::Point2f& a, const cv::Point2f& b) {
+        return cv::norm(a - b) < dist_threshold;
+    });
+
+    // 2. Trova il cluster più numeroso
+    std::vector<int> cluster_counts(n_clusters, 0);
+    for (int label : labels) {
+        cluster_counts[label]++;
+    }
+
+    int best_cluster_idx = std::distance(cluster_counts.begin(),  std::max_element(cluster_counts.begin(), cluster_counts.end()));
+
+    // 3. Estrai i punti appartenenti al miglior cluster
+    std::vector<cv::Point2f> best_cluster_points;
+    for (size_t i = 0; i < points.size(); ++i) {
+        if (labels[i] == best_cluster_idx) {
+            best_cluster_points.push_back(points[i]);
+        }
+    }
+
+    // 4. Calcola la Bounding Box
+    if (best_cluster_points.size() < 4) return cv::Rect(0, 0, 0, 0); // Evita cluster troppo piccoli
+    return cv::boundingRect(best_cluster_points);
 }
