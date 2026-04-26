@@ -71,3 +71,36 @@ cv::Rect compute_box(std::vector<cv::Point2f>& candidate_points, cv::Mat& frame1
 
     return box;
 }
+
+cv::Rect get_smart_bbox(const cv::Mat& mask) {
+    std::vector<std::vector<cv::Point>> contours;
+    
+    // Trova i contorni degli "ammassi" bianchi nella maschera
+    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    if (contours.empty()) {
+        return cv::Rect(0, 0, 0, 0);
+    }
+
+    double max_area = 0;
+    cv::Rect best_box(0, 0, 0, 0);
+
+    // Troviamo SOLO il contorno con l'area maggiore (il soggetto principale)
+    for (const auto& contour : contours) {
+        double current_area = cv::contourArea(contour);
+        
+        if (current_area > max_area) {
+            max_area = current_area;
+            best_box = cv::boundingRect(contour);
+        }
+    }
+
+    // Ignoriamo tutto se perfino il contorno più grande è solo polvere/rumore
+    if (max_area < 150) {
+        return cv::Rect(0, 0, 0, 0);
+    }
+
+    // Restituiamo strettamente la box del soggetto principale, 
+    // ignorando eventuali altri contorni lontani.
+    return best_box;
+}

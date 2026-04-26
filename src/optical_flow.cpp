@@ -15,7 +15,7 @@ cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2) {
     // 2. Calcolo Optical Flow Denso (Farneback)
     cv::Mat flow;
     // Parametri classici bilanciati per precisione e velocità
-    cv::calcOpticalFlowFarneback(gray1, gray2, flow, 0.5, 3, 15, 3, 5, 1.2, 0);
+    cv::calcOpticalFlowFarneback(gray1, gray2, flow, 0.3, 3, 12, 3, 3, 1.1, 0);
 
     // 3. Separazione canali (X, Y) e calcolo Magnitudo
     cv::Mat flow_parts[2];
@@ -48,36 +48,4 @@ cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2) {
     cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kClose); // Compatta l'oggetto (es. unisce testa e coda)
 
     return mask;
-} 
-cv::Rect get_smart_bbox(const cv::Mat& mask) {
-    std::vector<std::vector<cv::Point>> contours;
-    
-    // Trova i contorni degli "ammassi" bianchi nella maschera
-    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    if (contours.empty()) {
-        return cv::Rect(0, 0, 0, 0);
-    }
-
-    double max_area = 0;
-    cv::Rect best_box(0, 0, 0, 0);
-
-    // Troviamo SOLO il contorno con l'area maggiore (il soggetto principale)
-    for (const auto& contour : contours) {
-        double current_area = cv::contourArea(contour);
-        
-        if (current_area > max_area) {
-            max_area = current_area;
-            best_box = cv::boundingRect(contour);
-        }
-    }
-
-    // Ignoriamo tutto se perfino il contorno più grande è solo polvere/rumore
-    if (max_area < 150) {
-        return cv::Rect(0, 0, 0, 0);
-    }
-
-    // Restituiamo strettamente la box del soggetto principale, 
-    // ignorando eventuali altri contorni lontani.
-    return best_box;
 }

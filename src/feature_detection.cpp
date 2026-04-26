@@ -8,9 +8,3 @@ void detect_features_sift(const cv::Mat& frame, std::vector<cv::KeyPoint>& keypo
     sift -> detectAndCompute(gray, cv::noArray(), keypoints, descriptors);
 
 }
-
-void detect_feature_gftt(const cv::Mat& frame, std::vector<cv::Point2f>& corners){
-    cv::Mat gray;
-    cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-    cv::goodFeaturesToTrack(gray, corners, 1000, 0.01, 10);
-}

@@ -13,7 +13,6 @@
 
 
 int main(int argc, char** argv) {
-    // 1. Definizione delle classi da analizzare
     std::vector<std::string> classes = {"bird", "car", "frog", "sheep", "squirrel"};
     std::string win="win";
     float total_iou = 0.0f;
@@ -42,12 +41,12 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        int interval = frames.size() /20;
-        if(interval <2){
-            interval=2;
+        int step = frames.size() /20;
+        if(step <2){
+            step=2;
         }
         cv::Mat frame_start = frames[0];
-        cv::Mat frame_end = frames[interval];
+        cv::Mat frame_end = frames[step];
 
         cv::Mat motion_mask = get_refined_motion_mask(frame_start, frame_end);
 
