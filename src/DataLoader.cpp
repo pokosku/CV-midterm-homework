@@ -1,5 +1,7 @@
 #include "DataLoader.hpp"
 
+// AUTHORS: Daniele Riolmi Rossetto, Leonardo Joao Fabbro
+
 //constructor has to be fixed
 DataLoader::DataLoader(std::string directory){
     folder=directory;
@@ -56,4 +58,12 @@ cv::Mat DataLoader::load_next_img(int step){
     index+=step;
 
     return img;
+}
+
+void DataLoader::reset_head(){
+    index = 0;
+}
+
+std::size_t DataLoader::get_number_images(){
+    return number_images;
 }

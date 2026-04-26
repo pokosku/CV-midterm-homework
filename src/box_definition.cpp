@@ -4,7 +4,7 @@
 #include <cmath>
 
 
-cv::Rect define_bounding_box(const std::vector<cv::Point2f>& points, cv::Size frame_size) {
+cv::Rect bbox_from_clustering(const std::vector<cv::Point2f>& points, cv::Size frame_size) {
     if (points.empty()) return cv::Rect(0, 0, 0, 0);
 
     // 1. Clustering spaziale
@@ -38,7 +38,9 @@ cv::Rect define_bounding_box(const std::vector<cv::Point2f>& points, cv::Size fr
     return cv::boundingRect(best_cluster_points);
 }
 
-cv::Rect get_smart_bbox(const cv::Mat& mask) {
+
+
+cv::Rect bbox_from_mask(const cv::Mat& mask) {
     std::vector<std::vector<cv::Point>> contours;
     
     // Trova i contorni degli "ammassi" bianchi nella maschera

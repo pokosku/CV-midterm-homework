@@ -30,6 +30,8 @@ class DataLoader{
     cv::Mat load_test_img();
     cv::Mat load_next_img();
     cv::Mat load_next_img(int step);
+    std::size_t get_number_images();
+    void reset_head();
 
 };
 

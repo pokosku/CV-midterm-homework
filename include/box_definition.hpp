@@ -7,6 +7,6 @@
 #include <opencv2/features2d.hpp>
 #include <iostream>
 
-cv::Rect define_bounding_box(const std::vector<cv::Point2f>& candidate_point, cv::Size frame_size);
-cv::Rect get_smart_bbox(const cv::Mat& mask);
+cv::Rect bbox_from_clustering(const std::vector<cv::Point2f>& candidate_point, cv::Size frame_size);
+cv::Rect bbox_from_mask(const cv::Mat& mask);
 #endif
