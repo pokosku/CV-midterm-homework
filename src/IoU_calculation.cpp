@@ -1,3 +1,5 @@
+// AUTHORS: Daniele Riolmi Rossetto 
+
 #include "IoU_calculation.hpp"
 
 const std::string PATHIMAGES="../assets/labels/";
@@ -10,23 +12,24 @@ const std::string SQUIRREL="squirrel";
 float calculate_IoU(cv::Rect rect_a,std::string folder) {
     std::string path="";
     float x1,y1,x2,y2;
-    //check for path
+    // Checking for path integrity
     if(folder!=CAR && folder!=BIRD && folder!=FROG && folder!=SHEEP && folder!=SQUIRREL){
         std::cout<<"Error folder"<<std::endl;
         return -1;
     }else{
         path=PATHIMAGES+folder+"/0000.txt";
-        //reading label
+        // Reading label
         std::ifstream file(path);
-        //error if label is open
+
+        // Checking if the file is open
         if(!file.is_open()) {
             std::cerr << "Error opening file" << std::endl;
             return 1;
         }
-        //reading label
+
         while(file >> x1 >> y1 >> x2 >> y2);
 
-        //creating rect with labels found
+        // Creating rect with label found
         float width = x2 - x1;
         float height = y2 - y1;
         cv::Rect rect_b(x1, y1, width, height);
@@ -38,11 +41,12 @@ float calculate_IoU(cv::Rect rect_a,std::string folder) {
         float area_b = static_cast<float>(rect_b.area());
         float area_union = area_a + area_b - area_int;
         
-        //boh gemini dice di metterlo ma non so
+        // Checking division by 0
         if (area_union <= 0.0f) {
             return -1;
         }
         
+        // Return IoU
         return area_int / area_union;
     }
     
