@@ -61,6 +61,18 @@ float calculate_IoU(cv::Rect rect_a,std::string folder) {
 
 void generate_output(cv::Rect rect_a, cv::Mat frame, std::string method, std::string class_name){
 
+    // Defining bounding box path
+    std::string filename_bbox = "../output/"+method+"_"+class_name+".txt";
+    std::ofstream file(filename_bbox);
+
+    // Checking if file is open
+    if(!file.is_open()) {
+        throw std::runtime_error("Error opening file. Checkout if directory Output exists!!");
+    }  
+
+    // Writing coordinates on txt file
+    file<<rect_a.tl().x<<" "<<rect_a.tl().y<<" "<<rect_a.br().x<<" "<<rect_a.br().y;
+
     // Cheking if string method is correct
     if(method!="SIFT" && method!="optical_flow"){
         std::cerr<<"Wrong method"<<std::endl;
@@ -75,18 +87,5 @@ void generate_output(cv::Rect rect_a, cv::Mat frame, std::string method, std::st
     std::string filename_img="../output/"+method+"_"+class_name+".jpg";
     // Saving image
     cv::imwrite(filename_img,out);
-
-    // Defining bounding box path
-    std::string filename_bbox = "../output/"+method+"_"+class_name+".txt";
-    std::ofstream file(filename_bbox);
-
-    // Checking if file is open
-    if(!file.is_open()) {
-        std::cerr << "Error opening file" << std::endl;
-        return;
-    }  
-
-    // Writing coordinates on txt file
-    file<<rect_a.tl().x<<" "<<rect_a.tl().y<<" "<<rect_a.br().x<<" "<<rect_a.br().y;
 
 }

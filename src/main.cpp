@@ -112,14 +112,18 @@ int main(int argc, char** argv){
         accuracy_SIFT += iou > 0.5;
         mean_iou_SIFT += iou;
 
-        generate_output(bbox_SIFT,dl.load_test_img(),"SIFT",className);
-
         iou = calculate_IoU(bbox_optical_flow, className); 
         
         accuracy_optical_flow += iou > 0.5;
         mean_iou_optical_flow += iou;
 
-        generate_output(bbox_optical_flow,dl.load_test_img(),"optical_flow",className);
+        try{
+            generate_output(bbox_optical_flow,dl.load_test_img(),"optical_flow",className);
+            generate_output(bbox_SIFT,dl.load_test_img(),"SIFT",className);
+        }catch(const std::runtime_error& e){
+            std::cerr<<e.what()<<std::endl;
+            return -1;
+        }
     }
 
     // Calculating final mean intersection over union among classes for both methods 
