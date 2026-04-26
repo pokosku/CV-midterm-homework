@@ -1,3 +1,5 @@
+// AUTHORS: Mirco Zavarise, Daniele Riolmi Rossetto
+
 #include "optical_flow.hpp"
 
 
@@ -36,7 +38,7 @@ cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2) {
     cv::normalize(magnitude, mag_norm, 0, 255, cv::NORM_MINMAX);
     mag_norm.convertTo(mag_norm, CV_8U);
     
-    
+    // Mask initialization
     cv::threshold(mag_norm, mask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
    // Opening and closing using morphological operators to clean 

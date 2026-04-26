@@ -1,3 +1,5 @@
+// AUTHORS: Mirco Zavarise, Daniele Riolmi Rossetto, Leonardo Joao Fabbro
+
 #include "box_definition.hpp"
 #include <numeric>
 #include <algorithm>
@@ -43,9 +45,10 @@ cv::Rect bbox_from_clustering(const std::vector<cv::Point2f>& points, cv::Size f
 cv::Rect bbox_from_mask(const cv::Mat& mask) {
     std::vector<std::vector<cv::Point>> contours;
     
-    // Trova i contorni degli "ammassi" bianchi nella maschera
+    // Finding contours from mask
     cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
+    // Checking emptiness
     if (contours.empty()) {
         return cv::Rect(0, 0, 0, 0);
     }
@@ -53,7 +56,7 @@ cv::Rect bbox_from_mask(const cv::Mat& mask) {
     double max_area = 0;
     cv::Rect best_box(0, 0, 0, 0);
 
-    // Troviamo SOLO il contorno con l'area maggiore (il soggetto principale)
+    // Finding max area from contours vector
     for (const auto& contour : contours) {
         double current_area = cv::contourArea(contour);
         
@@ -63,13 +66,11 @@ cv::Rect bbox_from_mask(const cv::Mat& mask) {
         }
     }
 
-    // Ignoriamo tutto se perfino il contorno più grande è solo polvere/rumore
+    // Checking insufficient area size 
     if (max_area < 150) {
         return cv::Rect(0, 0, 0, 0);
     }
 
-    // Restituiamo strettamente la box del soggetto principale, 
-    // ignorando eventuali altri contorni lontani.
     return best_box;
 
 }
