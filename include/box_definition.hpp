@@ -5,6 +5,9 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d.hpp>
+#include <numeric>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 cv::Rect bbox_from_clustering(const std::vector<cv::Point2f>& candidate_point, cv::Size frame_size);

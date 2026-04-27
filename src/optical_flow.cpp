@@ -2,7 +2,6 @@
 
 #include "optical_flow.hpp"
 
-
 cv::Mat get_refined_motion_mask(const cv::Mat& frame1, const cv::Mat& frame2) {
  cv::Mat gray1, gray2;
     

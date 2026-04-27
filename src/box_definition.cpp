@@ -1,10 +1,6 @@
 // AUTHORS: Mirco Zavarise, Daniele Riolmi Rossetto, Leonardo Joao Fabbro
 
 #include "box_definition.hpp"
-#include <numeric>
-#include <algorithm>
-#include <cmath>
-
 
 cv::Rect bbox_from_clustering(const std::vector<cv::Point2f>& points, cv::Size frame_size) {
 

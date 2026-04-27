@@ -1,11 +1,5 @@
 // AUTHORS: Mirco Zavarise, Daniele Riolmi Rossetto, Leonardo Joao Fabbro
 
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/features2d.hpp>
-#include <iostream>
-
 #include "DataLoader.hpp"
 #include "feature_detection.hpp"
 #include "feature_matching.hpp"

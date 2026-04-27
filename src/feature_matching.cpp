@@ -1,7 +1,6 @@
 // AUTHORS: Leonardo Joao Fabbro
 
 #include "feature_matching.hpp"
-#include <opencv2/calib3d.hpp>
 
 std::vector<cv::Point2f> match_features(const cv::Mat& desc1, const std::vector<cv::KeyPoint> kp1, const cv::Mat& desc2, const std::vector<cv::KeyPoint> kp2){
     // BruteForce Matcher for 
@@ -29,7 +28,7 @@ std::vector<cv::Point2f> match_features(const cv::Mat& desc1, const std::vector<
     if(src_pts.size() >= 4) {
         std::vector<uchar> inliers_mask;
         // Small RANSAC threshold (3.0) to compensate SIFT mismatch
-        cv::findHomography(src_pts, dst_pts, cv::RANSAC, 3.0, inliers_mask);
+        cv::findHomography(src_pts, dst_pts, cv::USAC_ACCURATE, 3.0, inliers_mask);
         // The inliers mask is a vector with the i-th component equal to 1 if the point follows the homography, 0 otherwise
         for(size_t i = 0; i < inliers_mask.size(); i++) {
             if(inliers_mask[i] == 0) {
