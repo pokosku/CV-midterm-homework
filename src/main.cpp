@@ -87,33 +87,43 @@ int main(int argc, char** argv){
     float mean_iou_SIFT = 0, mean_iou_optical_flow = 0;
     
     // Cicle for all the classes
-    for(const auto& className : classes){
+    for(const auto& class_name : classes){
 
-        // DataLoader initialization
-        DataLoader dl(className);
-        
-        // Calling SIFT pipeline
-        cv::Rect bbox_SIFT = SIFT_pipeline(dl);
+        cv::Rect bbox_SIFT,bbox_optical_flow;
+        cv::Mat frame_0;
 
-        // Calling optical flow pipeline
-        cv::Rect bbox_optical_flow = optical_flow_pipeline(dl);
+        try{
+            // DataLoader initialization
+            DataLoader dl(class_name);
 
+            // Loading first frame
+            frame_0=dl.load_test_img();
+
+            // Calling SIFT pipeline
+            bbox_SIFT = SIFT_pipeline(dl);
+
+            // Calling optical flow pipeline
+            bbox_optical_flow = optical_flow_pipeline(dl);
+        }catch(const std::runtime_error& e){
+            std::cerr<<e.what()<<std::endl;
+            return -1;
+        }
         // Evaluation of accuracy and intersection over union for both pipelines
         float iou;
 
-        iou = calculate_IoU(bbox_SIFT, className); 
+        iou = calculate_IoU(bbox_SIFT, class_name); 
         
         accuracy_SIFT += iou > 0.5;
         mean_iou_SIFT += iou;
 
-        iou = calculate_IoU(bbox_optical_flow, className); 
+        iou = calculate_IoU(bbox_optical_flow, class_name); 
         
         accuracy_optical_flow += iou > 0.5;
         mean_iou_optical_flow += iou;
 
         try{
-            generate_output(bbox_optical_flow,dl.load_test_img(),"optical_flow",className);
-            generate_output(bbox_SIFT,dl.load_test_img(),"SIFT",className);
+            generate_output(bbox_optical_flow, frame_0, "optical_flow", class_name);
+            generate_output(bbox_SIFT, frame_0, "SIFT", class_name);
         }catch(const std::runtime_error& e){
             std::cerr<<e.what()<<std::endl;
             return -1;

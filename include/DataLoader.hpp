@@ -26,6 +26,7 @@ class DataLoader{
 
 
     public:
+    DataLoader();
     DataLoader(std::string directory);
     cv::Mat load_test_img();
     cv::Mat load_next_img();
