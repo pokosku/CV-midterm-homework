@@ -6,19 +6,40 @@ Before building the project, ensure your system has the following installed:
 * **OpenCV** (configured and accessible in your environment)
 * A standard C++ compiler (e.g., GCC, Clang)
 
-## Build Instructions
-1. **Dataset**: be sure to keep the same structure when donwloading the dataset. Having a directory "assets" in the project with inside the directories "labels" and "data".
+## Build and Run Instructions
 
-2. **Output folder** to collect output images and corners of the rectangle:
-Verify that exists an output directory and be sure to be in the build folder to run the cmake.
-Follow instructions below while located in the project folder.
+To ensure the executable runs correctly, the dataset must be placed in the correct directories, and an output folder must exist to collect the generated bounding boxes and images. 
 
-3. **Create the required directories** for the build files and the generated outputs:
+Run the following commands from the root directory of the project. These commands will automatically set up the required directory structure, compile the code, and execute it.
+
 ```bash
-mkdir output build
+# 1. Create the required dataset and output directories
+mkdir -p assets output
+
+# --- IMPORTANT ---
+# 2. Before proceeding, manually place your dataset files into the assets folder:
+#    - Put all sequence folders (e.g., bird, car) in: ./assets/
+#    - Put the ground truth annotations (.txt) in: ./assets/
+
+```
+### Example project tree
+```text
+project/
+├── build/                 
+├── output/                # Generated bounding boxes and images
+├── assets/               
+│   ├── data/              # Image sequences 
+│   └── labels/            # Ground truth annotations (.txt files)
+├── CMakeLists.txt         # Build configuration
+├── main.cpp               # Main source code
+
+```
+```bash
+# 3. Create the build directory, configure, and compile the project
+mkdir -p build
 cd build
 cmake ..
 make
-./test
-```
 
+# 4. Run the executable
+./test
