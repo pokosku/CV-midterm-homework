@@ -3,7 +3,7 @@
 ## Prerequisites
 Before building the project, ensure your system has the following installed:
 * **CMake** (version 3.10 or higher)
-* **OpenCV** (configured and accessible in your environment)
+* **OpenCV** (version 4.11)
 * A standard C++ compiler (e.g., GCC, Clang)
 
 ## Build and Run Instructions
